@@ -1,0 +1,77 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #f8fafc;
+  color: #1e293b;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Subtle agricultural subtle grid / background accents */
+.agri-bg-pattern {
+  background-color: #f8fafc;
+  background-image: radial-gradient(#16a34a15 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Print Specific Rules */
+@media print {
+  /* Hide all non-invoice elements */
+  body * {
+    visibility: hidden;
+  }
+  
+  #printable-invoice-area,
+  #printable-invoice-area * {
+    visibility: visible;
+  }
+
+  #printable-invoice-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  @page {
+    size: A4 portrait;
+    margin: 8mm 6mm;
+  }
+
+  /* Prevent browser header/footer text */
+  html, body {
+    width: 210mm;
+    height: 297mm;
+    background: #fff;
+    margin: 0;
+    padding: 0;
+  }
+}

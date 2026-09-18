@@ -1,0 +1,13 @@
+version: '3.8'
+services:
+  krish-billing:
+    build: .
+    container_name: krish_agriculture_billing
+    restart: always
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./backend/database:/app/backend/database
+    environment:
+      - PORT=5000
+      - NODE_ENV=production
