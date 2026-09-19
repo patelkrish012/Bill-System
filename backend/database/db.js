@@ -2,11 +2,22 @@ const Database = require('better-sqlite3');
 const path = require('path');
 const fs = require('fs');
 
-const dbDir = process.env.DATABASE_DIR || __dirname;
-if (!fs.existsSync(dbDir)) {
-  fs.mkdirSync(dbDir, { recursive: true });
+let dbDir = __dirname;
+if (process.env.DATABASE_DIR) {
+  try {
+    if (!fs.existsSync(process.env.DATABASE_DIR)) {
+      fs.mkdirSync(process.env.DATABASE_DIR, { recursive: true });
+    }
+    fs.accessSync(process.env.DATABASE_DIR, fs.constants.W_OK);
+    dbDir = process.env.DATABASE_DIR;
+  } catch (err) {
+    console.warn(`[Database] Warning: Cannot use DATABASE_DIR '${process.env.DATABASE_DIR}' (${err.message}). Falling back to local directory: ${__dirname}`);
+    dbDir = __dirname;
+  }
 }
+
 const dbPath = process.env.DATABASE_PATH || path.join(dbDir, 'krish_agriculture.db');
+console.log(`[Database] Using database path: ${dbPath}`);
 const db = new Database(dbPath);
 
 // Enable WAL mode and foreign keys for high performance & reliability
