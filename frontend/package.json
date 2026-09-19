@@ -19,7 +19,6 @@
     "clsx": "^2.1.1",
     "html2canvas": "^1.4.1",
     "jspdf": "^4.2.1",
-    "krish-agriculture-bill-system": "file:..",
     "lucide-react": "^1.47.0",
     "postcss": "^8.5.28",
     "react": "^19.3.0",

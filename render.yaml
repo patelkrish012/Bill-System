@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: krish-agriculture-api
+    runtime: node
+    region: singapore
+    plan: starter
+    buildCommand: npm --prefix backend install
+    startCommand: node backend/server.js
+    disk:
+      name: krish-db-disk
+      mountPath: /app/backend/database
+      sizeGB: 1
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: DATABASE_DIR
+        value: /app/backend/database
