@@ -257,7 +257,7 @@ export default function TaxInvoiceA4({ bill, isPreview = false }) {
         {/* Right: Subtotal, SGST, CGST, IGST, R.OFF, Ot. Add, Net Total */}
         <div className="col-span-5 text-xs">
           <div className="flex justify-between py-1 px-2 border-b border-black font-semibold">
-            <span className="uppercase">TATOL</span>
+            <span className="uppercase">TOTAL</span>
             <span className="font-mono">
               {Number(bill.subtotal).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
             </span>

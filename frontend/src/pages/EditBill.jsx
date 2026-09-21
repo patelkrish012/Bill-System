@@ -639,7 +639,7 @@ export default function EditBill() {
 
             <div className="p-4 rounded-xl bg-neutral-50 border border-neutral-200 space-y-2 text-sm">
               <div className="flex justify-between font-medium text-neutral-600">
-                <span>Subtotal (TATOL):</span>
+                <span>Subtotal (TOTAL):</span>
                 <span className="font-mono">{formatINR(subtotal)}</span>
               </div>
               <div className="flex justify-between font-black text-lg text-agri-950 pt-2 border-t border-neutral-300">
