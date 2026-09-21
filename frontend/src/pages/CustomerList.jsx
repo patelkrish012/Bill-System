@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { customersAPI } from '../services/api';
 import { formatINR } from '../utils/formatters';
 import Modal from '../components/common/Modal';
+import { useAuth } from '../context/AuthContext';
 import {
   Users,
   Search,
@@ -18,6 +19,7 @@ import {
 
 export default function CustomerList() {
   const navigate = useNavigate();
+  const { isAdmin } = useAuth();
   const [customers, setCustomers] = useState([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
@@ -153,13 +155,15 @@ export default function CustomerList() {
           </p>
         </div>
 
-        <button
-          onClick={handleOpenAdd}
-          className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-black uppercase tracking-wider text-white bg-agri-700 hover:bg-agri-800 rounded-lg shadow-sm transition-all hover:shadow"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Add New Customer</span>
-        </button>
+        {isAdmin && (
+          <button
+            onClick={handleOpenAdd}
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-black uppercase tracking-wider text-white bg-agri-700 hover:bg-agri-800 rounded-lg shadow-sm transition-all hover:shadow"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Add New Customer</span>
+          </button>
+        )}
       </div>
 
       {/* Search Bar */}

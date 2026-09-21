@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { itemsAPI } from '../services/api';
 import { formatINR } from '../utils/formatters';
 import Modal from '../components/common/Modal';
+import { useAuth } from '../context/AuthContext';
 import {
   Package,
   Search,
@@ -14,6 +15,7 @@ import {
 } from 'lucide-react';
 
 export default function ItemList() {
+  const { isAdmin } = useAuth();
   const [items, setItems] = useState([]);
   const [search, setSearch] = useState('');
   const [selectedCompany, setSelectedCompany] = useState('');
@@ -162,13 +164,15 @@ export default function ItemList() {
           </p>
         </div>
 
-        <button
-          onClick={handleOpenAdd}
-          className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-black uppercase tracking-wider text-white bg-agri-700 hover:bg-agri-800 rounded-lg shadow-sm transition-all hover:shadow"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Add New Product</span>
-        </button>
+        {isAdmin && (
+          <button
+            onClick={handleOpenAdd}
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-black uppercase tracking-wider text-white bg-agri-700 hover:bg-agri-800 rounded-lg shadow-sm transition-all hover:shadow"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Add New Product</span>
+          </button>
+        )}
       </div>
 
       {/* Filter & Search Bar */}
