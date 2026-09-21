@@ -33,7 +33,7 @@ export default function CustomerList() {
     address: '',
     village: '',
     taluka: '',
-    district: 'સાબરકાંઠા',
+    district: '',
     state: 'Gujarat',
     mobile: '',
     gstin: ''
@@ -68,7 +68,7 @@ export default function CustomerList() {
       address: '',
       village: '',
       taluka: '',
-      district: 'સાબરકાંઠા',
+      district: '',
       state: 'Gujarat',
       mobile: '',
       gstin: ''
@@ -83,7 +83,7 @@ export default function CustomerList() {
       address: customer.address || '',
       village: customer.village || '',
       taluka: customer.taluka || '',
-      district: customer.district || 'સાબરકાંઠા',
+      district: customer.district || '',
       state: customer.state || 'Gujarat',
       mobile: customer.mobile || '',
       gstin: customer.gstin || ''

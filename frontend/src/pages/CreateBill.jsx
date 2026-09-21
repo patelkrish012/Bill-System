@@ -40,7 +40,7 @@ export default function CreateBill() {
   const [customerAddress, setCustomerAddress] = useState('');
   const [customerVillage, setCustomerVillage] = useState('');
   const [customerTaluka, setCustomerTaluka] = useState('');
-  const [customerDistrict, setCustomerDistrict] = useState('સાબરકાંઠા');
+  const [customerDistrict, setCustomerDistrict] = useState('');
   const [customerState, setCustomerState] = useState('Gujarat');
   const [customerMobile, setCustomerMobile] = useState('');
   const [customerGSTIN, setCustomerGSTIN] = useState('');
