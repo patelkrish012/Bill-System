@@ -5,10 +5,10 @@ const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
-    const saved = localStorage.getItem('krish_user');
+    const saved = sessionStorage.getItem('krish_user');
     return saved ? JSON.parse(saved) : null;
   });
-  const [token, setToken] = useState(() => localStorage.getItem('krish_token'));
+  const [token, setToken] = useState(() => sessionStorage.getItem('krish_token'));
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -17,7 +17,7 @@ export function AuthProvider({ children }) {
         try {
           const res = await authAPI.getMe();
           setUser(res.data.user);
-          localStorage.setItem('krish_user', JSON.stringify(res.data.user));
+          sessionStorage.setItem('krish_user', JSON.stringify(res.data.user));
         } catch (err) {
           logout();
         }
@@ -32,16 +32,16 @@ export function AuthProvider({ children }) {
     const { token: receivedToken, user: receivedUser } = res.data;
     setToken(receivedToken);
     setUser(receivedUser);
-    localStorage.setItem('krish_token', receivedToken);
-    localStorage.setItem('krish_user', JSON.stringify(receivedUser));
+    sessionStorage.setItem('krish_token', receivedToken);
+    sessionStorage.setItem('krish_user', JSON.stringify(receivedUser));
     return receivedUser;
   };
 
   const logout = () => {
     setUser(null);
     setToken(null);
-    localStorage.removeItem('krish_token');
-    localStorage.removeItem('krish_user');
+    sessionStorage.removeItem('krish_token');
+    sessionStorage.removeItem('krish_user');
   };
 
   return (
