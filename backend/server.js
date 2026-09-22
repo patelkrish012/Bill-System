@@ -15,17 +15,6 @@ const PORT = process.env.PORT || 5000;
 initDatabase();
 seedDatabase();
 
-// ONE-TIME PASSWORD RESET — will be removed after deploy
-try {
-  const bcrypt = require('bcryptjs');
-  const { db } = require('./database/db');
-  const salt = bcrypt.genSaltSync(10);
-  db.prepare(`UPDATE users SET password_hash = ? WHERE username = 'admin'`).run(bcrypt.hashSync('Admin@123', salt));
-  db.prepare(`UPDATE users SET password_hash = ? WHERE username = 'staff'`).run(bcrypt.hashSync('Staff@123', salt));
-  console.log('✅ Passwords reset: admin=Admin@123 | staff=Staff@123');
-} catch(e) { console.error('Reset error:', e.message); }
-// END ONE-TIME RESET
-
 // Middleware
 app.use(cors({
   origin: '*',
