@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { billsAPI, customersAPI, itemsAPI, settingsAPI } from '../services/api';
 import { formatINR, numberToIndianWords, formatDate, toInputDate } from '../utils/formatters';
+import { transliterateToGujarati, isGujarati } from '../utils/transliterate';
 import TaxInvoiceA4 from '../components/invoice/TaxInvoiceA4';
 import {
   Plus,
@@ -44,6 +45,19 @@ export default function CreateBill() {
   const [customerState, setCustomerState] = useState('Gujarat');
   const [customerMobile, setCustomerMobile] = useState('');
   const [customerGSTIN, setCustomerGSTIN] = useState('');
+  const [transliterating, setTransliterating] = useState({});
+
+  // Auto-transliterate English → Gujarati on field blur
+  const handleTransliterate = async (value, setter, fieldKey) => {
+    if (!value || isGujarati(value)) return;
+    setTransliterating(prev => ({ ...prev, [fieldKey]: true }));
+    try {
+      const gujarati = await transliterateToGujarati(value);
+      setter(gujarati);
+    } finally {
+      setTransliterating(prev => ({ ...prev, [fieldKey]: false }));
+    }
+  };
 
   // Tax and Calculation State
   const [taxType, setTaxType] = useState('intra_state'); // intra_state (SGST+CGST) or inter_state (IGST)
@@ -531,53 +545,69 @@ export default function CreateBill() {
                 <label className="block text-xs font-bold text-neutral-700 uppercase mb-1">
                   Customer Name * (English / ગુજરાતી)
                 </label>
-                <input
-                  type="text"
-                  value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
-                  placeholder="e.g. પટેલ ગણેશભાઈ જીવાભાઈ / Ramesh Patel"
-                  className="w-full px-3 py-2 text-sm font-semibold border border-neutral-300 rounded-lg focus:ring-2 focus:ring-agri-600 outline-none"
-                  required
-                />
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={customerName}
+                    onChange={(e) => setCustomerName(e.target.value)}
+                    onBlur={(e) => handleTransliterate(e.target.value, setCustomerName, 'name')}
+                    placeholder="e.g. પટેલ ગણેશભાઈ જીવાભાઈ / Ramesh Patel"
+                    className="w-full px-3 py-2 text-sm font-semibold border border-neutral-300 rounded-lg focus:ring-2 focus:ring-agri-600 outline-none"
+                    required
+                  />
+                  {transliterating.name && <span className="absolute right-3 top-2.5 text-xs text-agri-600 animate-pulse">ગુ...</span>}
+                </div>
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-neutral-700 uppercase mb-1">
                   Village (ગામ)
                 </label>
-                <input
-                  type="text"
-                  value={customerVillage}
-                  onChange={(e) => setCustomerVillage(e.target.value)}
-                  placeholder="e.g. ડુંગરી / Daramali"
-                  className="w-full px-3 py-2 text-sm border border-neutral-300 rounded-lg focus:ring-2 focus:ring-agri-600 outline-none"
-                />
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={customerVillage}
+                    onChange={(e) => setCustomerVillage(e.target.value)}
+                    onBlur={(e) => handleTransliterate(e.target.value, setCustomerVillage, 'village')}
+                    placeholder="e.g. ડુંગરી / Daramali"
+                    className="w-full px-3 py-2 text-sm border border-neutral-300 rounded-lg focus:ring-2 focus:ring-agri-600 outline-none"
+                  />
+                  {transliterating.village && <span className="absolute right-3 top-2.5 text-xs text-agri-600 animate-pulse">ગુ...</span>}
+                </div>
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-neutral-700 uppercase mb-1">
                   Taluka (તાલુકો)
                 </label>
-                <input
-                  type="text"
-                  value={customerTaluka}
-                  onChange={(e) => setCustomerTaluka(e.target.value)}
-                  placeholder="e.g. ઇડર / Himatnagar"
-                  className="w-full px-3 py-2 text-sm border border-neutral-300 rounded-lg focus:ring-2 focus:ring-agri-600 outline-none"
-                />
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={customerTaluka}
+                    onChange={(e) => setCustomerTaluka(e.target.value)}
+                    onBlur={(e) => handleTransliterate(e.target.value, setCustomerTaluka, 'taluka')}
+                    placeholder="e.g. ઇડર / Himatnagar"
+                    className="w-full px-3 py-2 text-sm border border-neutral-300 rounded-lg focus:ring-2 focus:ring-agri-600 outline-none"
+                  />
+                  {transliterating.taluka && <span className="absolute right-3 top-2.5 text-xs text-agri-600 animate-pulse">ગુ...</span>}
+                </div>
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-neutral-700 uppercase mb-1">
                   District (જિલ્લો)
                 </label>
-                <input
-                  type="text"
-                  value={customerDistrict}
-                  onChange={(e) => setCustomerDistrict(e.target.value)}
-                  placeholder="e.g. સાબરકાંઠા / Sabarkantha"
-                  className="w-full px-3 py-2 text-sm border border-neutral-300 rounded-lg focus:ring-2 focus:ring-agri-600 outline-none"
-                />
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={customerDistrict}
+                    onChange={(e) => setCustomerDistrict(e.target.value)}
+                    onBlur={(e) => handleTransliterate(e.target.value, setCustomerDistrict, 'district')}
+                    placeholder="e.g. સાબરકાંઠા / Sabarkantha"
+                    className="w-full px-3 py-2 text-sm border border-neutral-300 rounded-lg focus:ring-2 focus:ring-agri-600 outline-none"
+                  />
+                  {transliterating.district && <span className="absolute right-3 top-2.5 text-xs text-agri-600 animate-pulse">ગુ...</span>}
+                </div>
               </div>
 
               <div>

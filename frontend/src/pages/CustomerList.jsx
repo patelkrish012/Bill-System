@@ -4,6 +4,7 @@ import { customersAPI } from '../services/api';
 import { formatINR } from '../utils/formatters';
 import Modal from '../components/common/Modal';
 import { useAuth } from '../context/AuthContext';
+import { transliterateToGujarati, isGujarati } from '../utils/transliterate';
 import {
   Users,
   Search,
@@ -293,14 +294,22 @@ export default function CustomerList() {
             <label className="block text-xs font-bold text-neutral-700 uppercase mb-1">
               Customer Name * (English / ગુજરાતી)
             </label>
-            <input
-              type="text"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              placeholder="e.g. પટેલ ગણેશભાઈ જીવાભાઈ / Ramesh Patel"
-              className="w-full px-3 py-2 text-sm border border-neutral-300 rounded-lg outline-none font-semibold"
-              required
-            />
+            <div className="relative">
+              <input
+                type="text"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onBlur={async (e) => {
+                  if (e.target.value && !isGujarati(e.target.value)) {
+                    const g = await transliterateToGujarati(e.target.value);
+                    setFormData(prev => ({ ...prev, name: g }));
+                  }
+                }}
+                placeholder="e.g. પટેલ ગણેશભાઈ જીવાભાઈ / Ramesh Patel"
+                className="w-full px-3 py-2 text-sm border border-neutral-300 rounded-lg outline-none font-semibold"
+                required
+              />
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -308,25 +317,41 @@ export default function CustomerList() {
               <label className="block text-xs font-bold text-neutral-700 uppercase mb-1">
                 Village (ગામ)
               </label>
-              <input
-                type="text"
-                value={formData.village}
-                onChange={(e) => setFormData({ ...formData, village: e.target.value })}
-                placeholder="e.g. ડુંગરી / Daramali"
-                className="w-full px-3 py-2 text-xs border border-neutral-300 rounded-lg outline-none"
-              />
+              <div className="relative">
+                <input
+                  type="text"
+                  value={formData.village}
+                  onChange={(e) => setFormData({ ...formData, village: e.target.value })}
+                  onBlur={async (e) => {
+                    if (e.target.value && !isGujarati(e.target.value)) {
+                      const g = await transliterateToGujarati(e.target.value);
+                      setFormData(prev => ({ ...prev, village: g }));
+                    }
+                  }}
+                  placeholder="e.g. ડુંગરી / Daramali"
+                  className="w-full px-3 py-2 text-xs border border-neutral-300 rounded-lg outline-none"
+                />
+              </div>
             </div>
             <div>
               <label className="block text-xs font-bold text-neutral-700 uppercase mb-1">
                 Taluka (તાલુકો)
               </label>
-              <input
-                type="text"
-                value={formData.taluka}
-                onChange={(e) => setFormData({ ...formData, taluka: e.target.value })}
-                placeholder="e.g. ઇડર / Himatnagar"
-                className="w-full px-3 py-2 text-xs border border-neutral-300 rounded-lg outline-none"
-              />
+              <div className="relative">
+                <input
+                  type="text"
+                  value={formData.taluka}
+                  onChange={(e) => setFormData({ ...formData, taluka: e.target.value })}
+                  onBlur={async (e) => {
+                    if (e.target.value && !isGujarati(e.target.value)) {
+                      const g = await transliterateToGujarati(e.target.value);
+                      setFormData(prev => ({ ...prev, taluka: g }));
+                    }
+                  }}
+                  placeholder="e.g. ઇડર / Himatnagar"
+                  className="w-full px-3 py-2 text-xs border border-neutral-300 rounded-lg outline-none"
+                />
+              </div>
             </div>
           </div>
 
@@ -335,13 +360,21 @@ export default function CustomerList() {
               <label className="block text-xs font-bold text-neutral-700 uppercase mb-1">
                 District (જિલ્લો)
               </label>
-              <input
-                type="text"
-                value={formData.district}
-                onChange={(e) => setFormData({ ...formData, district: e.target.value })}
-                placeholder="e.g. સાબરકાંઠા"
-                className="w-full px-3 py-2 text-xs border border-neutral-300 rounded-lg outline-none"
-              />
+              <div className="relative">
+                <input
+                  type="text"
+                  value={formData.district}
+                  onChange={(e) => setFormData({ ...formData, district: e.target.value })}
+                  onBlur={async (e) => {
+                    if (e.target.value && !isGujarati(e.target.value)) {
+                      const g = await transliterateToGujarati(e.target.value);
+                      setFormData(prev => ({ ...prev, district: g }));
+                    }
+                  }}
+                  placeholder="e.g. સાબરકાંઠા"
+                  className="w-full px-3 py-2 text-xs border border-neutral-300 rounded-lg outline-none"
+                />
+              </div>
             </div>
             <div>
               <label className="block text-xs font-bold text-neutral-700 uppercase mb-1">
