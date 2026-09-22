@@ -1,6 +1,6 @@
 [build]
 builder = "NIXPACKS"
-buildCommand = "npm --prefix backend install"
+buildCommand = "npm --prefix backend install && npm rebuild --prefix backend"
 
 [deploy]
 startCommand = "node backend/server.js"
@@ -9,5 +9,5 @@ restartPolicyMaxRetries = 3
 
 [healthcheck]
 path = "/api/health"
-initialDelaySeconds = 10
+initialDelaySeconds = 15
 periodSeconds = 30

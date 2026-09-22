@@ -1,0 +1,8 @@
+[variables]
+NODE_VERSION = "20"
+
+[phases.install]
+cmds = ["npm --prefix backend install", "npm rebuild --prefix backend"]
+
+[start]
+cmd = "node backend/server.js"
