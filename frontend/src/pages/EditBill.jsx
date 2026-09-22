@@ -161,7 +161,34 @@ export default function EditBill() {
 
   const updateItemField = (index, field, value) => {
     const updated = [...billItems];
-    updated[index][field] = value;
+    updated[index] = { ...updated[index], [field]: value };
+
+    // Auto-rebuild description_text when key fields change
+    const descFields = ['item_name', 'model', 'capacity', 'serial_no', 'unique_code', 'mf_year', 'company', 'hsn_code'];
+    if (descFields.includes(field)) {
+      const item = updated[index];
+      const name = field === 'item_name' ? value : item.item_name;
+      const model = field === 'model' ? value : item.model;
+      const capacity = field === 'capacity' ? value : item.capacity;
+      const serial_no = field === 'serial_no' ? value : item.serial_no;
+      const unique_code = field === 'unique_code' ? value : item.unique_code;
+      const mf_year = field === 'mf_year' ? value : item.mf_year;
+      const company = field === 'company' ? value : item.company;
+      const hsn_code = field === 'hsn_code' ? value : item.hsn_code;
+
+      const descLines = [];
+      if (model) descLines.push(`${name} Model:\n${model}`);
+      else if (name) descLines.push(name);
+      if (capacity) descLines.push(`CAPACITY:\n${capacity}`);
+      if (serial_no) descLines.push(`SR.NO:\n${serial_no}`);
+      if (unique_code) descLines.push(`UNIQ.CODE:\n${unique_code}`);
+      if (mf_year) descLines.push(`MF, YEAR:\n${mf_year}`);
+      if (company) descLines.push(`Company:\n${company}`);
+      if (hsn_code) descLines.push(`HSN Code:-${hsn_code}`);
+
+      updated[index].description_text = descLines.join('\n');
+    }
+
     setBillItems(updated);
   };
 
