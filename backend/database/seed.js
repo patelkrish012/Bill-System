@@ -1,70 +1,49 @@
 const bcrypt = require('bcryptjs');
-const { db, initDatabase } = require('./db');
+const { dbGet, dbRun, initDatabase } = require('./db');
 
-function seedDatabase() {
-  initDatabase();
+async function seedDatabase() {
+  await initDatabase();
 
-  // Check if users already exist
-  const userCount = db.prepare('SELECT COUNT(*) as count FROM users').get().count;
-  if (userCount > 0) {
-    return;
-  }
+  const userRow = await dbGet('SELECT COUNT(*) as count FROM users');
+  const userCount = userRow ? Number(userRow.count) : 0;
+  if (userCount > 0) return;
 
   console.log('Initializing system settings for Krish Agriculture...');
 
-  // 1. Users
   const salt = bcrypt.genSaltSync(10);
   const adminHash = bcrypt.hashSync('Admin@123', salt);
   const userHash = bcrypt.hashSync('Staff@123', salt);
 
-  const insertUser = db.prepare(`
-    INSERT INTO users (username, email, password_hash, full_name, role)
-    VALUES (?, ?, ?, ?, ?)
-  `);
-
-  insertUser.run('admin', 'admin@krishagriculture.com', adminHash, 'Krish Admin', 'admin');
-  insertUser.run('staff', 'staff@krishagriculture.com', userHash, 'Krish Billing Staff', 'user');
-
-  // 2. Business Settings
-  const insertSettings = db.prepare(`
-    INSERT INTO business_settings (
-      business_name, tagline, gstin, mobile, email, address, logo_path, starting_bill_no, current_bill_no
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `);
-
-  insertSettings.run(
-    'KRISH AGRICULTURE',
-    'SALES | SERVICE | SPARE PARTS',
-    '24AVCPP4549E1ZN',
-    '94297 62695',
-    'krishagriculturehmt@gmail.com',
-    'Gelexy Plaza, Idar himatnagar Highway Road, Daramali -383110. S.K. (Guj.)',
-    '/krish_logo.png',
-    41,
-    41
+  await dbRun(
+    `INSERT INTO users (username, email, password_hash, full_name, role) VALUES (?, ?, ?, ?, ?)`,
+    ['admin', 'admin@krishagriculture.com', adminHash, 'Krish Admin', 'admin']
+  );
+  await dbRun(
+    `INSERT INTO users (username, email, password_hash, full_name, role) VALUES (?, ?, ?, ?, ?)`,
+    ['staff', 'staff@krishagriculture.com', userHash, 'Krish Billing Staff', 'user']
   );
 
-  // 3. Bank Details
-  const insertBank = db.prepare(`
-    INSERT INTO bank_details (bank_name, account_holder, account_number, ifsc_code, branch, upi_id, is_default)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
-  `);
-
-  insertBank.run(
-    'State Bank of India',
-    'KRISH AGRICULTURE',
-    '412356789012',
-    'SBIN0001234',
-    'Himatnagar Branch',
-    '9429762695@sbi',
-    1
+  await dbRun(
+    `INSERT INTO business_settings (business_name, tagline, gstin, mobile, email, address, logo_path, starting_bill_no, current_bill_no)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      'KRISH AGRICULTURE',
+      'SALES | SERVICE | SPARE PARTS',
+      '24AVCPP4549E1ZN',
+      '94297 62695',
+      'krishagriculturehmt@gmail.com',
+      'Gelexy Plaza, Idar himatnagar Highway Road, Daramali -383110. S.K. (Guj.)',
+      '/krish_logo.png',
+      41,
+      41
+    ]
   );
 
-  // 4. Terms & Conditions
-  const insertTerm = db.prepare(`
-    INSERT INTO terms_conditions (term_text, sort_order)
-    VALUES (?, ?)
-  `);
+  await dbRun(
+    `INSERT INTO bank_details (bank_name, account_holder, account_number, ifsc_code, branch, upi_id, is_default)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    ['State Bank of India', 'KRISH AGRICULTURE', '412356789012', 'SBIN0001234', 'Himatnagar Branch', '9429762695@sbi', 1]
+  );
 
   const terms = [
     'Payment : 50% Advance with Purchase Order.',
@@ -74,16 +53,11 @@ function seedDatabase() {
     'Payment Mode type cheque/dd..',
     'All Disputes Subject to Himatnagar Juridiction'
   ];
+  for (let i = 0; i < terms.length; i++) {
+    await dbRun(`INSERT INTO terms_conditions (term_text, sort_order) VALUES (?, ?)`, [terms[i], i + 1]);
+  }
 
-  terms.forEach((term, index) => {
-    insertTerm.run(term, index + 1);
-  });
-
-  console.log('System initialized cleanly with 0 dummy bills/customers/items.');
-}
-
-if (require.main === module) {
-  seedDatabase();
+  console.log('System initialized cleanly.');
 }
 
 module.exports = { seedDatabase };

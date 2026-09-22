@@ -1,38 +1,22 @@
-const Database = require('better-sqlite3');
-const path = require('path');
-const fs = require('fs');
+const { createClient } = require('@libsql/client');
 
-let dbDir = __dirname;
-if (process.env.DATABASE_DIR) {
-  try {
-    if (!fs.existsSync(process.env.DATABASE_DIR)) {
-      fs.mkdirSync(process.env.DATABASE_DIR, { recursive: true });
-    }
-    fs.accessSync(process.env.DATABASE_DIR, fs.constants.W_OK);
-    dbDir = process.env.DATABASE_DIR;
-  } catch (err) {
-    console.warn(`[Database] Warning: Cannot use DATABASE_DIR '${process.env.DATABASE_DIR}' (${err.message}). Falling back to local directory: ${__dirname}`);
-    dbDir = __dirname;
-  }
-}
+// Use Turso cloud URL in production, local file in development
+const db = createClient({
+  url: process.env.TURSO_DATABASE_URL || 'file:krish_agriculture.db',
+  authToken: process.env.TURSO_AUTH_TOKEN || undefined,
+});
 
-const dbPath = process.env.DATABASE_PATH || path.join(dbDir, 'krish_agriculture.db');
-console.log(`[Database] Using database path: ${dbPath}`);
-const db = new Database(dbPath);
+console.log(`[Database] Connecting to: ${process.env.TURSO_DATABASE_URL ? 'Turso Cloud' : 'Local SQLite file'}`);
 
-// Enable WAL mode and foreign keys for high performance & reliability
-db.pragma('journal_mode = WAL');
-db.pragma('foreign_keys = ON');
-
-function initDatabase() {
-  db.exec(`
+async function initDatabase() {
+  await db.executeMultiple(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       username TEXT UNIQUE NOT NULL,
       email TEXT,
       password_hash TEXT NOT NULL,
       full_name TEXT NOT NULL,
-      role TEXT NOT NULL DEFAULT 'user', -- 'admin' or 'user'
+      role TEXT NOT NULL DEFAULT 'user',
       is_active INTEGER DEFAULT 1,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
@@ -118,7 +102,7 @@ function initDatabase() {
       customer_state TEXT DEFAULT 'Gujarat',
       customer_mobile TEXT,
       customer_gstin TEXT,
-      tax_type TEXT DEFAULT 'intra_state', -- 'intra_state' (SGST+CGST) or 'inter_state' (IGST)
+      tax_type TEXT DEFAULT 'intra_state',
       subtotal REAL NOT NULL DEFAULT 0,
       sgst_amount REAL DEFAULT 0,
       cgst_amount REAL DEFAULT 0,
@@ -128,7 +112,7 @@ function initDatabase() {
       round_off REAL DEFAULT 0,
       net_total REAL NOT NULL DEFAULT 0,
       amount_in_words TEXT NOT NULL,
-      payment_status TEXT DEFAULT 'pending', -- 'paid', 'partial', 'pending'
+      payment_status TEXT DEFAULT 'pending',
       paid_amount REAL DEFAULT 0,
       remaining_amount REAL DEFAULT 0,
       business_name_snap TEXT NOT NULL,
@@ -138,8 +122,8 @@ function initDatabase() {
       email_snap TEXT NOT NULL,
       address_snap TEXT NOT NULL,
       logo_path_snap TEXT,
-      bank_details_snap TEXT, -- JSON string
-      terms_snap TEXT,        -- JSON string
+      bank_details_snap TEXT,
+      terms_snap TEXT,
       notes TEXT,
       created_by TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -177,7 +161,7 @@ function initDatabase() {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       bill_id INTEGER NOT NULL,
       amount REAL NOT NULL,
-      payment_method TEXT DEFAULT 'cash', -- 'cash', 'upi', 'cheque', 'bank_transfer', 'other'
+      payment_method TEXT DEFAULT 'cash',
       transaction_ref TEXT,
       payment_date TEXT NOT NULL,
       notes TEXT,
@@ -188,9 +172,9 @@ function initDatabase() {
 
     CREATE TABLE IF NOT EXISTS audit_logs (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      entity_type TEXT NOT NULL, -- 'bill', 'customer', 'item', 'settings', 'user', 'payment'
+      entity_type TEXT NOT NULL,
       entity_id TEXT,
-      action TEXT NOT NULL,      -- 'create', 'update', 'delete', 'login'
+      action TEXT NOT NULL,
       details TEXT,
       username TEXT,
       timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -202,6 +186,28 @@ function initDatabase() {
     CREATE INDEX IF NOT EXISTS idx_bill_items_bill ON bill_items(bill_id);
     CREATE INDEX IF NOT EXISTS idx_payments_bill ON payments(bill_id);
   `);
+  console.log('[Database] Tables initialized successfully.');
 }
 
-module.exports = { db, initDatabase };
+// Helper: run a query and get all rows
+async function dbAll(sql, args = []) {
+  const result = await db.execute({ sql, args });
+  return result.rows;
+}
+
+// Helper: run a query and get first row
+async function dbGet(sql, args = []) {
+  const result = await db.execute({ sql, args });
+  return result.rows[0] || null;
+}
+
+// Helper: run an insert/update/delete, return lastInsertRowid and rowsAffected
+async function dbRun(sql, args = []) {
+  const result = await db.execute({ sql, args });
+  return {
+    lastInsertRowid: result.lastInsertRowid !== undefined ? Number(result.lastInsertRowid) : null,
+    changes: result.rowsAffected
+  };
+}
+
+module.exports = { db, initDatabase, dbAll, dbGet, dbRun };

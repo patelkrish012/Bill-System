@@ -1,224 +1,126 @@
 const express = require('express');
-const { db } = require('../database/db');
+const { dbAll, dbGet, dbRun } = require('../database/db');
 const { verifyToken } = require('../middleware/auth');
 const { logAudit } = require('../utils/auditLogger');
 
 const router = express.Router();
 
-// Get items with search, filtering, and sorting
-router.get('/', verifyToken, (req, res) => {
-  const { search, company, sort_by = 'name', sort_order = 'ASC' } = req.query;
+router.get('/', verifyToken, async (req, res) => {
+  try {
+    const { search, company, sort_by = 'name', sort_order = 'ASC' } = req.query;
+    let query = 'SELECT * FROM items WHERE 1=1';
+    const params = [];
 
-  let query = 'SELECT * FROM items WHERE 1=1';
-  const params = [];
+    if (search) {
+      query += ` AND (name LIKE ? OR model LIKE ? OR serial_no LIKE ? OR unique_code LIKE ? OR company LIKE ? OR hsn_code LIKE ?)`;
+      const term = `%${search.trim()}%`;
+      params.push(term, term, term, term, term, term);
+    }
+    if (company) { query += ' AND company = ?'; params.push(company); }
 
-  if (search) {
-    query += ` AND (
-      name LIKE ? OR 
-      model LIKE ? OR 
-      serial_no LIKE ? OR 
-      unique_code LIKE ? OR 
-      company LIKE ? OR
-      hsn_code LIKE ?
-    )`;
-    const term = `%${search.trim()}%`;
-    params.push(term, term, term, term, term, term);
+    const validSortColumns = ['name', 'rate', 'model', 'company', 'created_at', 'stock_qty'];
+    const sortCol = validSortColumns.includes(sort_by) ? sort_by : 'name';
+    const sortDir = sort_order.toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
+    query += ` ORDER BY ${sortCol} ${sortDir}`;
+
+    const items = await dbAll(query, params);
+    res.json(items);
+  } catch (err) {
+    console.error('Items list error:', err);
+    res.status(500).json({ error: 'Failed to fetch items.' });
   }
-
-  if (company) {
-    query += ' AND company = ?';
-    params.push(company);
-  }
-
-  const validSortColumns = ['name', 'rate', 'model', 'company', 'created_at', 'stock_qty'];
-  const sortCol = validSortColumns.includes(sort_by) ? sort_by : 'name';
-  const sortDir = sort_order.toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
-
-  query += ` ORDER BY ${sortCol} ${sortDir}`;
-
-  const items = db.prepare(query).all(...params);
-  res.json(items);
 });
 
-// Single item
-router.get('/:id', verifyToken, (req, res) => {
-  const item = db.prepare('SELECT * FROM items WHERE id = ?').get(req.params.id);
-  if (!item) {
-    return res.status(404).json({ error: 'Item not found.' });
+router.get('/:id', verifyToken, async (req, res) => {
+  try {
+    const item = await dbGet('SELECT * FROM items WHERE id = ?', [req.params.id]);
+    if (!item) return res.status(404).json({ error: 'Item not found.' });
+    res.json(item);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch item.' });
   }
-  res.json(item);
 });
 
-// Create item
-router.post('/', verifyToken, (req, res) => {
-  const {
-    name,
-    model,
-    capacity,
-    serial_no,
-    unique_code,
-    mf_year,
-    company,
-    rate,
-    sgst_pct,
-    cgst_pct,
-    igst_pct,
-    hsn_code,
-    description,
-    stock_qty
-  } = req.body;
+router.post('/', verifyToken, async (req, res) => {
+  try {
+    const { name, model, capacity, serial_no, unique_code, mf_year, company, rate, sgst_pct, cgst_pct, igst_pct, hsn_code, description, stock_qty } = req.body;
+    if (!name || rate === undefined) return res.status(400).json({ error: 'Item name and rate are required.' });
 
-  if (!name || rate === undefined) {
-    return res.status(400).json({ error: 'Item name and rate are required.' });
+    const result = await dbRun(
+      `INSERT INTO items (name, model, capacity, serial_no, unique_code, mf_year, company, rate, sgst_pct, cgst_pct, igst_pct, hsn_code, description, stock_qty)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [name.trim(), model || '', capacity || '', serial_no || '', unique_code || '', mf_year || '', company || '',
+       Number(rate) || 0, Number(sgst_pct) || 6, Number(cgst_pct) || 6, Number(igst_pct) || 12,
+       hsn_code || '', description || '', stock_qty !== undefined ? Number(stock_qty) : 1]
+    );
+
+    logAudit('item', result.lastInsertRowid, 'create', `Added item: ${name} (${model})`, req.user.username);
+    const created = await dbGet('SELECT * FROM items WHERE id = ?', [result.lastInsertRowid]);
+    res.status(201).json(created);
+  } catch (err) {
+    console.error('Item create error:', err);
+    res.status(500).json({ error: 'Failed to create item.' });
   }
-
-  const stmt = db.prepare(`
-    INSERT INTO items (
-      name, model, capacity, serial_no, unique_code, mf_year, company,
-      rate, sgst_pct, cgst_pct, igst_pct, hsn_code, description, stock_qty
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `);
-
-  const result = stmt.run(
-    name.trim(),
-    model || '',
-    capacity || '',
-    serial_no || '',
-    unique_code || '',
-    mf_year || '',
-    company || '',
-    Number(rate) || 0,
-    Number(sgst_pct) !== undefined ? Number(sgst_pct) : 6,
-    Number(cgst_pct) !== undefined ? Number(cgst_pct) : 6,
-    Number(igst_pct) !== undefined ? Number(igst_pct) : 12,
-    hsn_code || '',
-    description || '',
-    stock_qty !== undefined ? Number(stock_qty) : 1
-  );
-
-  logAudit('item', result.lastInsertRowid, 'create', `Added item: ${name} (${model})`, req.user.username);
-  const created = db.prepare('SELECT * FROM items WHERE id = ?').get(result.lastInsertRowid);
-  res.status(201).json(created);
 });
 
-// Update item
-router.put('/:id', verifyToken, (req, res) => {
-  const { id } = req.params;
-  const {
-    name,
-    model,
-    capacity,
-    serial_no,
-    unique_code,
-    mf_year,
-    company,
-    rate,
-    sgst_pct,
-    cgst_pct,
-    igst_pct,
-    hsn_code,
-    description,
-    stock_qty
-  } = req.body;
+router.put('/:id', verifyToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, model, capacity, serial_no, unique_code, mf_year, company, rate, sgst_pct, cgst_pct, igst_pct, hsn_code, description, stock_qty } = req.body;
+    if (!name || rate === undefined) return res.status(400).json({ error: 'Item name and rate are required.' });
 
-  if (!name || rate === undefined) {
-    return res.status(400).json({ error: 'Item name and rate are required.' });
+    await dbRun(
+      `UPDATE items SET name=?, model=?, capacity=?, serial_no=?, unique_code=?, mf_year=?, company=?,
+       rate=?, sgst_pct=?, cgst_pct=?, igst_pct=?, hsn_code=?, description=?, stock_qty=?, updated_at=CURRENT_TIMESTAMP
+       WHERE id=?`,
+      [name.trim(), model || '', capacity || '', serial_no || '', unique_code || '', mf_year || '', company || '',
+       Number(rate) || 0, Number(sgst_pct) || 0, Number(cgst_pct) || 0, Number(igst_pct) || 0,
+       hsn_code || '', description || '', Number(stock_qty) || 0, id]
+    );
+
+    logAudit('item', id, 'update', `Updated item: ${name}`, req.user.username);
+    const updated = await dbGet('SELECT * FROM items WHERE id = ?', [id]);
+    res.json(updated);
+  } catch (err) {
+    console.error('Item update error:', err);
+    res.status(500).json({ error: 'Failed to update item.' });
   }
-
-  db.prepare(`
-    UPDATE items SET
-      name = ?,
-      model = ?,
-      capacity = ?,
-      serial_no = ?,
-      unique_code = ?,
-      mf_year = ?,
-      company = ?,
-      rate = ?,
-      sgst_pct = ?,
-      cgst_pct = ?,
-      igst_pct = ?,
-      hsn_code = ?,
-      description = ?,
-      stock_qty = ?,
-      updated_at = CURRENT_TIMESTAMP
-    WHERE id = ?
-  `).run(
-    name.trim(),
-    model || '',
-    capacity || '',
-    serial_no || '',
-    unique_code || '',
-    mf_year || '',
-    company || '',
-    Number(rate) || 0,
-    Number(sgst_pct) || 0,
-    Number(cgst_pct) || 0,
-    Number(igst_pct) || 0,
-    hsn_code || '',
-    description || '',
-    Number(stock_qty) || 0,
-    id
-  );
-
-  logAudit('item', id, 'update', `Updated item: ${name}`, req.user.username);
-  const updated = db.prepare('SELECT * FROM items WHERE id = ?').get(id);
-  res.json(updated);
 });
 
-// Duplicate item
-router.post('/:id/duplicate', verifyToken, (req, res) => {
-  const { id } = req.params;
-  const original = db.prepare('SELECT * FROM items WHERE id = ?').get(id);
-  
-  if (!original) {
-    return res.status(404).json({ error: 'Original item not found.' });
+router.post('/:id/duplicate', verifyToken, async (req, res) => {
+  try {
+    const original = await dbGet('SELECT * FROM items WHERE id = ?', [req.params.id]);
+    if (!original) return res.status(404).json({ error: 'Original item not found.' });
+
+    const result = await dbRun(
+      `INSERT INTO items (name, model, capacity, serial_no, unique_code, mf_year, company, rate, sgst_pct, cgst_pct, igst_pct, hsn_code, description, stock_qty)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [`${original.name} (Copy)`, original.model, original.capacity,
+       original.serial_no ? `${original.serial_no}-NEW` : '', original.unique_code,
+       original.mf_year, original.company, original.rate, original.sgst_pct, original.cgst_pct, original.igst_pct,
+       original.hsn_code, original.description, 1]
+    );
+
+    logAudit('item', result.lastInsertRowid, 'create', `Duplicated item from ${original.name}`, req.user.username);
+    const duplicated = await dbGet('SELECT * FROM items WHERE id = ?', [result.lastInsertRowid]);
+    res.status(201).json(duplicated);
+  } catch (err) {
+    console.error('Item duplicate error:', err);
+    res.status(500).json({ error: 'Failed to duplicate item.' });
   }
-
-  const newName = `${original.name} (Copy)`;
-  const newSerial = original.serial_no ? `${original.serial_no}-NEW` : '';
-
-  const stmt = db.prepare(`
-    INSERT INTO items (
-      name, model, capacity, serial_no, unique_code, mf_year, company,
-      rate, sgst_pct, cgst_pct, igst_pct, hsn_code, description, stock_qty
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `);
-
-  const result = stmt.run(
-    newName,
-    original.model,
-    original.capacity,
-    newSerial,
-    original.unique_code,
-    original.mf_year,
-    original.company,
-    original.rate,
-    original.sgst_pct,
-    original.cgst_pct,
-    original.igst_pct,
-    original.hsn_code,
-    original.description,
-    1
-  );
-
-  logAudit('item', result.lastInsertRowid, 'create', `Duplicated item from ${original.name}`, req.user.username);
-  const duplicated = db.prepare('SELECT * FROM items WHERE id = ?').get(result.lastInsertRowid);
-  res.status(201).json(duplicated);
 });
 
-// Delete item
-router.delete('/:id', verifyToken, (req, res) => {
-  const { id } = req.params;
-  const item = db.prepare('SELECT name FROM items WHERE id = ?').get(id);
-
-  if (!item) {
-    return res.status(404).json({ error: 'Item not found.' });
+router.delete('/:id', verifyToken, async (req, res) => {
+  try {
+    const item = await dbGet('SELECT name FROM items WHERE id = ?', [req.params.id]);
+    if (!item) return res.status(404).json({ error: 'Item not found.' });
+    await dbRun('DELETE FROM items WHERE id = ?', [req.params.id]);
+    logAudit('item', req.params.id, 'delete', `Deleted item ${item.name}`, req.user.username);
+    res.json({ success: true, message: 'Item deleted.' });
+  } catch (err) {
+    console.error('Item delete error:', err);
+    res.status(500).json({ error: 'Failed to delete item.' });
   }
-
-  db.prepare('DELETE FROM items WHERE id = ?').run(id);
-  logAudit('item', id, 'delete', `Deleted item ${item.name}`, req.user.username);
-  res.json({ success: true, message: 'Item deleted.' });
 });
 
 module.exports = router;

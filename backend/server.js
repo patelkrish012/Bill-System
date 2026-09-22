@@ -3,17 +3,12 @@ const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 const dotenv = require('dotenv');
-const { initDatabase } = require('./database/db');
 const { seedDatabase } = require('./database/seed');
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-
-// Initialize & seed DB if needed
-initDatabase();
-seedDatabase();
 
 // Middleware
 app.use(cors({
@@ -67,14 +62,24 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: err.message || 'Internal Server Error' });
 });
 
-app.listen(PORT, () => {
-  console.log(`====================================================`);
-  console.log(`KRISH AGRICULTURE Server running on http://localhost:${PORT}`);
-  console.log(`Database connected & seeded successfully.`);
-  console.log(`Default Admin: admin / Admin@123`);
-  console.log(`Default Staff: staff / Staff@123`);
-  console.log(`Default GSTIN: 24AVCPP4549E1ZN`);
-  console.log(`====================================================`);
-});
+// Async startup — init DB then start server
+async function start() {
+  try {
+    await seedDatabase(); // seeds initDatabase() + default data
+    app.listen(PORT, () => {
+      console.log(`====================================================`);
+      console.log(`KRISH AGRICULTURE Server running on http://localhost:${PORT}`);
+      console.log(`Database: ${process.env.TURSO_DATABASE_URL ? 'Turso Cloud' : 'Local SQLite'}`);
+      console.log(`Default Admin: admin / Admin@123`);
+      console.log(`Default Staff: staff / Staff@123`);
+      console.log(`====================================================`);
+    });
+  } catch (err) {
+    console.error('Failed to start server:', err);
+    process.exit(1);
+  }
+}
+
+start();
 
 module.exports = app;
