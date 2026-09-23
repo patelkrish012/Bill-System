@@ -1,12 +1,26 @@
 const { createClient } = require('@libsql/client');
 
-// Use Turso cloud URL in production, local file in development
+const fs = require('fs');
+const path = require('path');
+
+let dbUrl = process.env.TURSO_DATABASE_URL;
+if (!dbUrl) {
+  if (fs.existsSync('/data')) {
+    dbUrl = 'file:/data/krish_agriculture.db';
+  } else if (process.env.DATABASE_DIR && fs.existsSync(process.env.DATABASE_DIR)) {
+    dbUrl = `file:${path.join(process.env.DATABASE_DIR, 'krish_agriculture.db')}`;
+  } else {
+    dbUrl = 'file:krish_agriculture.db';
+  }
+}
+
+// Use Turso cloud URL in production, or persistent volume/local file
 const db = createClient({
-  url: process.env.TURSO_DATABASE_URL || 'file:krish_agriculture.db',
+  url: dbUrl,
   authToken: process.env.TURSO_AUTH_TOKEN || undefined,
 });
 
-console.log(`[Database] Connecting to: ${process.env.TURSO_DATABASE_URL ? 'Turso Cloud' : 'Local SQLite file'}`);
+console.log(`[Database] Connecting to: ${dbUrl}`);
 
 async function initDatabase() {
   await db.executeMultiple(`

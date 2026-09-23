@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const { db } = require('../database/db');
+const { dbGet } = require('../database/db');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'krish-agri-secret-token-2026-secure-key';
 
@@ -16,7 +16,7 @@ function generateToken(user) {
   );
 }
 
-function verifyToken(req, res, next) {
+async function verifyToken(req, res, next) {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'Authentication required. No token provided.' });
@@ -25,7 +25,7 @@ function verifyToken(req, res, next) {
   const token = authHeader.split(' ')[1];
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
-    const user = db.prepare('SELECT id, username, email, full_name, role, is_active FROM users WHERE id = ?').get(decoded.id);
+    const user = await dbGet('SELECT id, username, email, full_name, role, is_active FROM users WHERE id = ?', [decoded.id]);
     
     if (!user || !user.is_active) {
       return res.status(401).json({ error: 'User is inactive or no longer exists.' });
