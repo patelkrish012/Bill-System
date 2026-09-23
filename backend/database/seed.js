@@ -1,8 +1,19 @@
 const bcrypt = require('bcryptjs');
-const { dbGet, dbRun, initDatabase } = require('./db');
+const { dbAll, dbGet, dbRun, initDatabase } = require('./db');
 
 async function seedDatabase() {
   await initDatabase();
+
+  // Strip leading zeros from any existing bills (e.g. '068' -> '68')
+  try {
+    const zeroBills = await dbAll("SELECT id, bill_number FROM bills WHERE bill_number LIKE '0%'");
+    for (const b of zeroBills) {
+      const stripped = b.bill_number.replace(/^0+(?=\d)/, '');
+      await dbRun("UPDATE bills SET bill_number = ? WHERE id = ?", [stripped, b.id]);
+    }
+  } catch (e) {
+    console.warn('Could not clean leading zero bills:', e.message);
+  }
 
   const userRow = await dbGet('SELECT COUNT(*) as count FROM users');
   const userCount = userRow ? Number(userRow.count) : 0;

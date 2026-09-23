@@ -6,10 +6,12 @@ const { numberToIndianWords } = require('../utils/numberToWords');
 
 const router = express.Router();
 
+// Format bill number: no leading zeros (e.g. 69, 41, 100)
 function formatBillNumber(num) {
-  const n = parseInt(num, 10);
-  if (isNaN(n)) return String(num);
-  return n < 100 ? String(n).padStart(3, '0') : String(n);
+  if (num === null || num === undefined) return '';
+  const str = String(num).trim();
+  const cleaned = str.replace(/^0+(?=\d)/, '');
+  return cleaned || str;
 }
 
 router.get('/next-number', verifyToken, async (req, res) => {

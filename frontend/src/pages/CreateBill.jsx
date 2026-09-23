@@ -508,7 +508,7 @@ export default function CreateBill() {
                   value={billNumber}
                   onChange={(e) => setBillNumber(e.target.value)}
                   className="w-full px-3 py-2 text-sm font-mono font-bold border border-neutral-300 rounded-lg focus:ring-2 focus:ring-agri-600 outline-none"
-                  placeholder="e.g. 041"
+                  placeholder="e.g. 41"
                   required
                 />
               </div>
