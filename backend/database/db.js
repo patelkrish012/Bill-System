@@ -3,21 +3,16 @@ const { createClient } = require('@libsql/client');
 const fs = require('fs');
 const path = require('path');
 
-let dbUrl = process.env.TURSO_DATABASE_URL;
-if (!dbUrl) {
-  if (fs.existsSync('/data')) {
-    dbUrl = 'file:/data/krish_agriculture.db';
-  } else if (process.env.DATABASE_DIR && fs.existsSync(process.env.DATABASE_DIR)) {
-    dbUrl = `file:${path.join(process.env.DATABASE_DIR, 'krish_agriculture.db')}`;
-  } else {
-    dbUrl = 'file:krish_agriculture.db';
-  }
-}
+const TURSO_URL = 'libsql://krishdb-patelkrish012.aws-us-east-1.turso.io';
+const TURSO_TOKEN = 'eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJleHAiOjE4ODgzODMxNzMsImlhdCI6MTc5MzA4Mzk3MywiaWQiOiIwMWExN2MxZS04NDAxLTc4ZWItYmU0NS01NWQwNDM5Njc0ZTgiLCJraWQiOiI0UVJtWUh0SDFZd1FmRmhCQjJKY1JvM1lfTEtuVTdSemZvTEdyVGVpOEFvIiwicmlkIjoiNGYxNmQwMWQtZTNiYy00OGZkLWJhNjItYzgwYWFhNmY1MjY2In0.zvR9PS2NhKJjvOku9kQtLVCsg9gSBlLz7iFYCXDLsHwfuBYhG4xWbNiCaxpy6u8-rFH_Vw9C3kejJ2wmQtjEBw';
 
-// Use Turso cloud URL in production, or persistent volume/local file
+const dbUrl = process.env.TURSO_DATABASE_URL || TURSO_URL;
+const authToken = process.env.TURSO_AUTH_TOKEN || TURSO_TOKEN;
+
+// Connect to Turso Cloud SQLite Database
 const db = createClient({
   url: dbUrl,
-  authToken: process.env.TURSO_AUTH_TOKEN || undefined,
+  authToken: authToken,
 });
 
 console.log(`[Database] Connecting to: ${dbUrl}`);

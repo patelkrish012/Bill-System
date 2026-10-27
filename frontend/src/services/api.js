@@ -3,8 +3,8 @@ import axios from 'axios';
 let API_BASE_URL = import.meta.env.VITE_API_URL;
 if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
   API_BASE_URL = 'http://localhost:5000/api';
-} else if (!API_BASE_URL || API_BASE_URL.includes('onrender.com')) {
-  API_BASE_URL = 'https://brilliant-smile-production-5aea.up.railway.app/api';
+} else if (!API_BASE_URL || API_BASE_URL.includes('railway.app')) {
+  API_BASE_URL = 'https://krish-agriculture-api.onrender.com/api';
 }
 
 const api = axios.create({

@@ -3,17 +3,15 @@ services:
     name: krish-agriculture-api
     runtime: node
     region: singapore
-    plan: starter
+    plan: free
     buildCommand: npm --prefix backend install
     startCommand: node backend/server.js
-    disk:
-      name: krish-db-disk
-      mountPath: /data
-      sizeGB: 1
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
         value: 5000
-      - key: DATABASE_DIR
-        value: /data
+      - key: TURSO_DATABASE_URL
+        value: libsql://krishdb-patelkrish012.aws-us-east-1.turso.io
+      - key: TURSO_AUTH_TOKEN
+        value: eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJleHAiOjE4ODgzODMxNzMsImlhdCI6MTc5MzA4Mzk3MywiaWQiOiIwMWExN2MxZS04NDAxLTc4ZWItYmU0NS01NWQwNDM5Njc0ZTgiLCJraWQiOiI0UVJtWUh0SDFZd1FmRmhCQjJKY1JvM1lfTEtuVTdSemZvTEdyVGVpOEFvIiwicmlkIjoiNGYxNmQwMWQtZTNiYy00OGZkLWJhNjItYzgwYWFhNmY1MjY2In0.zvR9PS2NhKJjvOku9kQtLVCsg9gSBlLz7iFYCXDLsHwfuBYhG4xWbNiCaxpy6u8-rFH_Vw9C3kejJ2wmQtjEBw
